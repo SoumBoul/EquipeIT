@@ -1,32 +1,51 @@
 using EquipIT.Front.Models;
+using System.Net.Http.Json;
 
 namespace EquipIT.Front.Services;
 
 public class EquipmentApiService
 {
+
+    private readonly HttpClient _httpClient;
+
+    public EquipmentApiService(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
     // TODO: Pour l'exercice 2, remplacez ces données mockées par un appel HTTP réel vers votre API Backend.
     // En attendant, le front fonctionne hors-ligne avec cette liste simulée en mémoire.
-    private readonly List<Equipment> _mockEquipments =
-    [
-        new Equipment { Id = 1, Name = "Monitor", Category = "Display", IsAvailable = true },
-        new Equipment { Id = 2, Name = "Keyboard", Category = "Input", IsAvailable = true },
-        new Equipment { Id = 3, Name = "Mouse", Category = "Input", IsAvailable = true },
-    ];
-
-    public Task<List<Equipment>> GetEquipmentAsync()
+   
+    public async Task<List<Equipment>> GetEquipmentAsync()
     {
-        return Task.FromResult(_mockEquipments.ToList());
+        var equipments = await _httpClient.GetFromJsonAsync<List<Equipment>>( "api/equipment/All");
+
+        return equipments ?? new List<Equipment>();
     }
 
-    public Task BorrowAsync(int id, string firstName, string lastName)
+    public async Task BorrowAsync(
+        int id, string firstName, string lastName)
     {
-        // TODO: Replace with HttpClient calls to the API and send FirstName/LastName during PUT.
-        return Task.CompletedTask;
+        var request = new
+        {
+            FirstName = firstName,
+            LastName = lastName
+        };
+
+        using var response = await _httpClient.PutAsJsonAsync( $"api/equipment/{id}/borrow",request);
+
+        response.EnsureSuccessStatusCode();
     }
 
-    public Task ReturnAsync(int id)
+    public async Task ReturnAsync(int id)
     {
-        // TODO: Replace with HttpClient calls to the API and send FirstName/LastName during PUT.
-        return Task.CompletedTask;
+        using var response = await _httpClient.PutAsync(
+            $"api/equipment/{id}/return",
+            null);
+
+        response.EnsureSuccessStatusCode();
     }
 }
+    
+   
+    
+

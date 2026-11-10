@@ -1,4 +1,10 @@
+using EquipIT.Api.Data;
+using EquipIT.Api.Models;
+using EquipIT.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
+
 
 namespace EquipIT.Api.Controllers;
 
@@ -6,23 +12,71 @@ namespace EquipIT.Api.Controllers;
 [Route("api/equipment")]
 public class EquipmentController : ControllerBase
 {
-    // TODO: Implement GET and PUT endpoints. Create a DTO to retrieve FirstName and LastName from the borrowing form.
 
-    [HttpGet]
+   private readonly IEquipmentService _service;
+    public EquipmentController(IEquipmentService service)
+    {
+        _service = service;
+    }
+
+
+    [ProducesResponseType(typeof(IEnumerable<Equipment>), 200)]
+    [ProducesResponseType(typeof(IEnumerable<Equipment>), 400)]
+    [HttpGet ("All")]
+    
     public async Task<IActionResult> GetAll()
     {
-        throw new NotImplementedException();
+        if(_service == null)
+        {
+            return BadRequest("Service is not available.");
+        }
+        return Ok(await _service.GetAllEquipmentAsync());
     }
 
+    [ProducesResponseType(typeof(IEnumerable<Equipment>), 200)]
+    [ProducesResponseType(typeof(IEnumerable<Equipment>), 400)]
     [HttpPut("{id:int}/borrow")]
-    public async Task<IActionResult> Borrow(int id)
+    public async Task<IActionResult> Borrow(int id, string FirstName, string LastName)
     {
-        throw new NotImplementedException();
+        if (id <= 0)
+        {
+            return BadRequest("Service is not available.");
+        }
+        
+        if (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(LastName))
+        {
+            await Task.FromException<IEnumerable<Equipment>>(new ArgumentNullException("FirstName and LastName must be provided."));
+
+        }
+       
+
+       await  _service.BorrowEquipmentAsync(id, FirstName, LastName);
+        return Ok("Matériel Borrow avec succès.");
     }
+
+    [ProducesResponseType(typeof(IEnumerable<Equipment>), 200)]
+    [ProducesResponseType(typeof(IEnumerable<Equipment>), 400)]
 
     [HttpPut("{id:int}/return")]
-    public async Task<IActionResult> Return(int id)
+    public async Task<IActionResult> Return(int id, string FirstName, string LastName)
     {
-        throw new NotImplementedException();
+        if (id <= 0)
+        {
+            return BadRequest("Service is not available.");
+        }
+       
+        if (FirstName == null || LastName == null)
+        {
+            await Task.FromException<IEnumerable<Equipment>>(new ArgumentNullException("FirstName must be provided."));
+        }
+        
+            await _service.ReturnEquipmentAsync(id);
+
+        return Ok("Service returned with succes");
+
+
+
+
     }
+   
 }
