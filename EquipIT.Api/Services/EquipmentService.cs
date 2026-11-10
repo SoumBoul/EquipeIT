@@ -1,6 +1,8 @@
 using EquipIT.Api.Data;
 using EquipIT.Api.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace EquipIT.Api.Services;
 
@@ -27,22 +29,22 @@ public class EquipmentService : IEquipmentService
     }
 
 
-    public async Task BorrowEquipmentAsync( int id, string firstName, string lastName)
+    public async Task BorrowEquipmentAsync([Range(1, int.MaxValue)] int id , string firstName, string lastName)
     {
         
 
         var equipment = await _context.Equipments.FindAsync(id);
 
-        if (equipment == null)
+       if(equipment.Id == null)
         {
-            throw new InvalidOperationException( $"Le matériel avec l'identifiant {id} est introuvable.");
+            throw new InvalidOperationException($"Equipment with id {id} was not found.");
         }
-
         if (!equipment.IsAvailable)
         {
-            throw new InvalidOperationException("Ce matériel est déjà emprunté.");
+           throw new InvalidOperationException("Ce matériel est déjà emprunté.");
         }
 
+       
         equipment.IsAvailable = false;
         equipment.BorrowerFirstName = firstName;
         equipment.BorrowerLastName = lastName;
@@ -51,15 +53,11 @@ public class EquipmentService : IEquipmentService
        await _context.SaveChangesAsync();
     }
 
-    public async Task ReturnEquipmentAsync(int id)
+    public async Task ReturnEquipmentAsync([Range(1, int.MaxValue)] int id)
     {
         // TODO: Implement business logic by checking availability and saving via EF Core
         var equipment = await _context.Equipments.FindAsync(id);
-        if (id<=0)
-        {
-            throw new InvalidOperationException($"Equipment with id {id} was not found.");
-
-        }
+       
         if(equipment==null)
         {
             throw new InvalidOperationException($"Equipment with id {id} was not returned.");
