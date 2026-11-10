@@ -14,28 +14,35 @@ public class EquipmentController : ControllerBase
 {
 
    private readonly IEquipmentService _service;
-     EquipmentController(IEquipmentService service)
+    public EquipmentController(IEquipmentService service)
     {
         _service = service;
     }
 
 
     [ProducesResponseType(typeof(IEnumerable<Equipment>), 200)]
+    [ProducesResponseType(typeof(IEnumerable<Equipment>), 400)]
     [HttpGet ("All")]
     
     public async Task<IActionResult> GetAll()
     {
-        return Ok(_service.GetAllEquipmentAsync());
+        if(_service == null)
+        {
+            return BadRequest("Service is not available.");
+        }
+        return Ok(await _service.GetAllEquipmentAsync());
     }
 
     [ProducesResponseType(typeof(IEnumerable<Equipment>), 200)]
+    [ProducesResponseType(typeof(IEnumerable<Equipment>), 400)]
     [HttpPut("{id:int}/borrow")]
     public async Task<IActionResult> Borrow(int id, string FirstName, string LastName)
     {
         if (id <= 0)
         {
-            await Task.FromException<IEnumerable<Equipment>>(new ArgumentOutOfRangeException(nameof(id), "Id must be greater than zero."));
+            return BadRequest("Service is not available.");
         }
+        
         if (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(LastName))
         {
             await Task.FromException<IEnumerable<Equipment>>(new ArgumentNullException("FirstName and LastName must be provided."));
@@ -43,25 +50,30 @@ public class EquipmentController : ControllerBase
         }
        
 
-       return Ok( _service.BorrowEquipmentAsync(id, FirstName, LastName));
+       await  _service.BorrowEquipmentAsync(id, FirstName, LastName);
+        return Ok("Matériel Borrow avec succès.");
     }
 
     [ProducesResponseType(typeof(IEnumerable<Equipment>), 200)]
+    [ProducesResponseType(typeof(IEnumerable<Equipment>), 400)]
 
     [HttpPut("{id:int}/return")]
     public async Task<IActionResult> Return(int id, string FirstName, string LastName)
     {
-       
+        if (id <= 0)
+        {
+            return BadRequest("Service is not available.");
+        }
        
         if (FirstName == null || LastName == null)
         {
             await Task.FromException<IEnumerable<Equipment>>(new ArgumentNullException("FirstName must be provided."));
         }
         
-            return Ok(_service.ReturnEquipmentAsync(1));
+            await _service.ReturnEquipmentAsync(id);
 
-        
-     
+        return Ok("Service returned with succes");
+
 
 
 
