@@ -1,8 +1,6 @@
 using EquipIT.Api.Data;
 using EquipIT.Api.Models;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 
 namespace EquipIT.Api.Services;
 
@@ -10,68 +8,35 @@ public class EquipmentService : IEquipmentService
 {
     private readonly EquipITDbContext _context;
 
-    public EquipmentService(EquipITDbContext context)
+    public EquipmentService(EquipITDbContext context) => _context = context;
+
+    public async Task<IEnumerable<Equipment>> GetAllEquipmentAsync() =>
+        await _context.Equipments.AsNoTracking().OrderBy(e => e.Id).ToListAsync();
+
+
+    public async Task BorrowEquipmentAsync(int id, string firstName, string lastName)
     {
-        _context = context;
-    }
+        if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
+            throw new ArgumentException("Le prénom et le nom sont obligatoires.");
 
-    public async Task<IEnumerable<Equipment>> GetAllEquipmentAsync()
-    {
-        if (_context.Equipments == null)
-        {
-            throw new InvalidOperationException("No equipment found.");
-        }
-        if (_context.Equipments.Count() == 0)
-        {
-            throw new InvalidOperationException("No equipment found.");
-        }
-        return await _context.Equipments.ToListAsync();
-    }
-
-
-    public async Task BorrowEquipmentAsync([Range(1, int.MaxValue)] int id , string firstName, string lastName)
-    {
-        
-
-        var equipment = await _context.Equipments.FindAsync(id);
-
-       if(equipment.Id == null)
-        {
-            throw new InvalidOperationException($"Equipment with id {id} was not found.");
-        }
+        var equipment = await FindEquipmentAsync(id);
         if (!equipment.IsAvailable)
-        {
-           throw new InvalidOperationException("Ce matériel est déjà emprunté.");
-        }
+            throw new InvalidOperationException("Ce matériel est déjà emprunté.");
 
-       
         equipment.IsAvailable = false;
-        equipment.BorrowerFirstName = firstName;
-        equipment.BorrowerLastName = lastName;
+        equipment.BorrowerFirstName = firstName.Trim();
+        equipment.BorrowerLastName = lastName.Trim();
         equipment.BorrowDate = DateTime.UtcNow;
-
-       await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync();
     }
 
-    public async Task ReturnEquipmentAsync([Range(1, int.MaxValue)] int id)
+    public async Task ReturnEquipmentAsync(int id)
     {
-        // TODO: Implement business logic by checking availability and saving via EF Core
-        var equipment = await _context.Equipments.FindAsync(id);
-       
-        if(equipment==null)
-        {
-            throw new InvalidOperationException($"Equipment with id {id} was not returned.");
-        }
-       
-
-        if (equipment.IsAvailable != false)
-      
-        {
-            throw new InvalidOperationException($"Equipment with id {id} is returned.");
-        }
+        var equipment = await FindEquipmentAsync(id);
+        if (equipment.IsAvailable)
+            throw new InvalidOperationException("Ce matériel est déjà disponible.");
 
         equipment.LastReturnDate = DateTime.UtcNow;
-
         equipment.IsAvailable = true;
         equipment.BorrowerFirstName = null;
         equipment.BorrowerLastName = null;
@@ -79,19 +44,7 @@ public class EquipmentService : IEquipmentService
         await _context.SaveChangesAsync();
     }
 
-    public async Task<Equipment> FindEquipmentAsync(int id)
-    {
-        var equipment = await _context.Equipments.FindAsync(id);
-        if (equipment == null)
-        {
-            throw new InvalidOperationException($"Equipment with id {id} was not found.");
-        }
-
-        else
-             throw new InvalidOperationException($"Equipment with id {id} is  found.");
-            
-          
-
-        
-    }
+    public async Task<Equipment> FindEquipmentAsync(int id) =>
+        await _context.Equipments.FindAsync(id)
+        ?? throw new KeyNotFoundException($"Matériel {id} introuvable.");
 }

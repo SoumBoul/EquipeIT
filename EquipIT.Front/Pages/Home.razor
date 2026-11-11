@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @inject EquipmentApiService ApiService
 @inject IStringLocalizer<App> Localizer
 
@@ -71,7 +71,14 @@ else
                 {
                     <tr>
                         <td colspan="7">
-                            @* // TODO: Create the borrowing form here to capture BorrowerFirstName and BorrowerLastName. *@
+                            <form @onsubmit="BorrowAsync" @onsubmit:preventDefault="true" class="d-flex gap-2 align-items-center flex-wrap">
+                                <label for="borrowFirstName">Prénom</label>
+                                <input id="borrowFirstName" class="form-control w-auto" @bind="firstName" required disabled="@isBusy" />
+                                <label for="borrowLastName">Nom</label>
+                                <input id="borrowLastName" class="form-control w-auto" @bind="lastName" required disabled="@isBusy" />
+                                <button type="submit" class="btn btn-primary" disabled="@isBusy">Confirmer</button>
+                                <button type="button" class="btn btn-secondary" @onclick="CancelBorrow" disabled="@isBusy">Annuler</button>
+                            </form>
                         </td>
                     </tr>
                 }
@@ -84,6 +91,7 @@ else
 {
     <div class="alert alert-danger" role="alert">
         @errorMessage
+        <button class="btn btn-sm btn-outline-danger ms-2" @onclick="LoadEquipmentAsync" disabled="@isBusy">Réessayer</button>
     </div>
 }
 
@@ -92,6 +100,8 @@ else
     private bool isBusy;
     private string? errorMessage;
     private int? borrowingEquipmentId;
+    private string firstName = string.Empty;
+    private string lastName = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -101,12 +111,44 @@ else
     private async Task LoadEquipmentAsync()
     {
         errorMessage = null;
-        equipments = await ApiService.GetEquipmentAsync();
+        try
+        {
+            equipments = await ApiService.GetEquipmentAsync();
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            equipments = new List<Equipment>();
+            errorMessage = "La réponse du serveur est invalide. Réessayez après avoir redémarré le serveur.";
+        }
+        catch (HttpRequestException)
+        {
+            equipments = new List<Equipment>();
+            errorMessage = "Impossible de charger les équipements. Vérifiez que le serveur est démarré, puis réessayez.";
+        }
     }
 
     private void ShowBorrowForm(int id)
     {
         borrowingEquipmentId = id;
+        firstName = string.Empty;
+        lastName = string.Empty;
+    }
+
+    private void CancelBorrow() => borrowingEquipmentId = null;
+
+    private async Task BorrowAsync()
+    {
+        if (borrowingEquipmentId is not int id) return;
+        if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
+        {
+            errorMessage = "Saisissez le prénom et le nom de l’emprunteur.";
+            return;
+        }
+        await ExecuteActionAsync(async () =>
+        {
+            await ApiService.BorrowAsync(id, firstName.Trim(), lastName.Trim());
+            borrowingEquipmentId = null;
+        });
     }
 
     private async Task ReturnAsync(Equipment equipment)

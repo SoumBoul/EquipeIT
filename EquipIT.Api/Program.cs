@@ -4,14 +4,14 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// builder.Services.AddOpenApi(); // TODO: Décommentez pour activer Swagger
+builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 
 // Allow the Blazor WebAssembly app to call this API
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazorApp", policy =>
-        policy.WithOrigins("https://localhost:7211")
+        policy.WithOrigins("https://localhost:7211", "http://localhost:5200")
               .AllowAnyMethod()
               .AllowAnyHeader());
 });
@@ -20,7 +20,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<EquipITDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// builder.Services.AddScoped<IEquipmentService, EquipmentService>(); // TODO: Décommentez pour injecter le service
+builder.Services.AddScoped<IEquipmentService, EquipmentService>();
 
 var app = builder.Build();
 
@@ -34,7 +34,10 @@ using (var scope = app.Services.CreateScope())
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    // app.MapOpenApi(); // TODO: Décommentez pour activer Swagger
+    app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+        options.SwaggerEndpoint("/openapi/v1.json", "EquipIT API v1"));
+   
 }
 
 app.UseHttpsRedirection();
