@@ -7,7 +7,7 @@ namespace EquipIT.Tests;
 
 public class EquipmentServiceTests
 {
-   
+
     private static EquipITDbContext CreateDbContext(string databaseName)
     {
         var options = new DbContextOptionsBuilder<EquipITDbContext>()
