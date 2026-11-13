@@ -20,21 +20,21 @@ var host = builder.Build();
 // TODO: Uncomment to re-enable i18n multilingual support (fr/en)
 // Read the saved culture from the browser and apply it before the app starts.
 // Default to French, keep the user's choice only if it is a supported culture.
-// var js = host.Services.GetRequiredService<IJSRuntime>();
+var js = host.Services.GetRequiredService<IJSRuntime>();
+
+string? savedCulture = null;
+try
+{
+    savedCulture = await js.InvokeAsync<string>("appCulture.get");
+}
+catch (JSException)
+{
+    // Local storage unavailable: fall back to the default culture
+}
 //
-// string? savedCulture = null;
-// try
-// {
-//     savedCulture = await js.InvokeAsync<string>("appCulture.get");
-// }
-// catch (JSException)
-// {
-//     // Local storage unavailable: fall back to the default culture
-// }
-//
-// var cultureName = savedCulture is "fr-FR" or "en-US" ? savedCulture : "fr-FR";
-// var culture = new CultureInfo(cultureName);
-// CultureInfo.DefaultThreadCurrentCulture = culture;
-// CultureInfo.DefaultThreadCurrentUICulture = culture;
+var cultureName = savedCulture is "fr-FR" or "en-US" ? savedCulture : "fr-FR";
+var culture = new CultureInfo(cultureName);
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
 
 await host.RunAsync();
