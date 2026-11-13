@@ -34,31 +34,54 @@ public class EquipmentController : ControllerBase
         return Ok(await _service.GetAllEquipmentAsync());
     }
 
-    [ProducesResponseType(typeof(IEnumerable<Equipment>), statusCode: 200)]
-    [ProducesResponseType(typeof(IEnumerable<Equipment>), statusCode: 204)]
-    [ProducesResponseType(typeof(IEnumerable<Equipment>), statusCode: 400)]
-    [HttpPut("{id:int}/borrow")]
-    public async Task<IActionResult> Borrow([Range(1, int.MaxValue)]int id, [FromQuery, Required] string firstName, [FromQuery, Required] string lastName)
+    
+ [ProducesResponseType(204)]
+[ProducesResponseType(400)]
+[HttpPut("{id:int}/borrow")]
+public async Task<IActionResult> Borrow([Range(1, int.MaxValue)] int id,[FromQuery, Required] string firstName, [FromQuery, Required] string lastName)
+{
+    try
     {
-       
-
         await _service.BorrowEquipmentAsync(id, firstName, lastName);
+
         return NoContent();
     }
-
-    [ProducesResponseType(typeof(IEnumerable<Equipment>), 200)]
-    [ProducesResponseType(typeof(IEnumerable<Equipment>), 400)]
-
-    [HttpPut("{id:int}/return")]
-    public async Task<IActionResult> Return([Range(1, int.MaxValue)] int id, [FromQuery, Required] string firstName, [FromQuery, Required] string lastName)
+    catch (ArgumentException ex)
     {
-        await _service.ReturnEquipmentAsync(id);
+        return BadRequest(new { message = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return BadRequest(new { message = ex.Message });
+    }
+    catch (KeyNotFoundException ex)
+    {
+        return BadRequest(new { message = ex.Message });
+    }
+}
 
-        return Ok("Service returned with succes");
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [HttpPut("{id:int}/return")]
+    public async Task<IActionResult> Return([Range(1, int.MaxValue)] int id)
+        {
+            try
+            {
+                await _service.ReturnEquipmentAsync(id);
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
 
 
 
 
     }
 
-}

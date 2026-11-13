@@ -1,5 +1,6 @@
 using EquipIT.Front.Models;
 using System.Net.Http.Json;
+using static System.Net.WebRequestMethods;
 
 namespace EquipIT.Front.Services;
 
@@ -22,15 +23,11 @@ public class EquipmentApiService
         return equipments ?? new List<Equipment>();
     }
 
-    public async Task BorrowAsync( int id, string firstName, string lastName)
+    public async Task BorrowAsync(int id, string firstName, string lastName)
     {
-        var request = new
-        {
-            FirstName = firstName,
-            LastName = lastName
-        };
-
-        using var response = await _httpClient.PutAsJsonAsync($"api/equipment/{id}/borrow", request);
+        var response = await _httpClient.PutAsync(
+            $"api/equipment/{id}/borrow?firstName={firstName}&lastName={lastName}",
+            null);
 
         response.EnsureSuccessStatusCode();
     }
